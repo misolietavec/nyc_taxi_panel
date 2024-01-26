@@ -4,7 +4,7 @@ import os, pickle
 
 
 def get_totals(frm, pick=True):
-    columns = ['pick_day','pick_hour'] if pick else ['drop_day','drop_hour']
+    columns = [pl.col('pick_day'), pl.col('pick_hour')] if pick else [pl.col('drop_day'), pl.col('drop_hour')]
     df_total = frm.group_by(columns)\
                             .agg([pl.col('fare').sum().alias('Platby'),\
                                   pl.col('passengers').sum().alias('Cestujúci'),

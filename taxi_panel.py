@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[ ]:
+
+
 import polars as pl
 import panel as pn
 import numpy as np
@@ -11,14 +17,14 @@ pn.config.throttled = True
 pn.extension('plotly','ipywidgets')
 
 df = pl.read_parquet('data/nyc_taxi155k.parq')
+df = df.with_columns(pl.col('rtime').cast(pl.Float32)/1000/60) # casy v min.
 meanloc = [df['pick_lat'].mean(), df['pick_lon'].mean()]
-df = df.with_columns(pl.col('distance').round(1).alias('dist_rounded'))
 
 pick_days, drop_days, pick_hours, drop_hours = static_graphs(df)
 static_days = pn.Column(pick_days, drop_days)
 static_hours = pn.Column(pick_hours, drop_hours)
-
 dfdays = make_graphs(df, create=False)  # grafy predrobene uz pre tento vyber
+
 
 # vyber dna, hodiny, smeru (nastup, vystup)
 day_choose = pnw.IntSlider(start=1, end=31, value=14, width=250, name='Deň')
@@ -78,16 +84,23 @@ def rides(day_choose, hour_choose, smer):
 
 @pn.depends(nbins)
 def view_distances(nbins): 
-    yp, x = np.histogram(df['distance'], bins=nbins, range=(0, 8))
-    yr, x = np.histogram(df['dist_rounded'], bins=nbins, range=(0, 8))
+    y, x = np.histogram(df['distance'], bins=nbins, range=(0, 8))
     x = (x[0:-1] + x[1:]) / 2  # stredy intervalov
-    df_hist = pl.DataFrame({'x': x, 'pôvodné': yp, 'zaokrúhlené': yr})
-    return px.bar(data_frame=df_hist, x='x', y=['pôvodné', 'zaokrúhlené'], 
-                  barmode='group', labels={'x': 'vzdialenosť (km)', 'value': 'početnosť',
-                                           'variable': 'hodnota'}, width=900)
+    df_hist = pl.DataFrame({'x': x, 'y': y}) # , 'zaokrúhlené': yr})
+    return px.bar(data_frame=df_hist, x='x', y='y', #  'zaokrúhlené'], 
+                  barmode='group', labels={'x': 'Vzdialenosť (km)', 'y': 'početnosť',
+                                           'variable': 'hodnota'}, width=900, height=350)
 
+@pn.depends(nbins)
+def view_rtimes(nbins):
+    y, x = np.histogram(df['rtime'], bins=nbins, range=(0, 45)) # min.
+    x = (x[0:-1] + x[1:]) / 2  # stredy intervalov
+    df_hist = pl.DataFrame({'x': x, 'y': y}) # , 'zaokrúhlené': yr})
+    return px.bar(data_frame=df_hist, x='x', y='y', 
+                  barmode='group', labels={'x': 'Čas jazdy (min.)', 'y': 'početnosť',
+                                           'variable': 'hodnota'}, width=900, height=350)
 
-distances = pn.Column(pn.Spacer(height=20), nbins, view_distances) 
+dist_and_times = pn.Column(pn.Spacer(height=20), nbins, view_distances, view_rtimes)
 nadpis = pn.pane.Markdown(
     f"""
     # Taxi v New Yorku
@@ -99,5 +112,5 @@ maps = pn.Column( pn.Spacer(height=20), pn.Row(smer, day_choose, hour_choose), r
 totals = pn.Column(pn.Spacer(height=20), day_or_hour, view_totals)
 
 tabs = pn.Tabs(('Grafy podľa dní', hourly), ('Grafy celkové', totals),
-               ('Miesta na mape', maps), ('Vzdialenosti', distances), dynamic=True)
+               ('Miesta na mape', maps), ('Histogramy', dist_and_times), dynamic=True)
 pn.Column(nadpis, pn.Spacer(height=25), tabs).servable()
