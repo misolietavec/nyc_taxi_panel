@@ -11,8 +11,8 @@ def get_totals(frm, pick=True):
                                   pl.col('fare').count().alias('Jazdy')])\
                             .sort(by=columns)
     return df_total
-   
 
+    
 def total_graphs(frm, pick=True, height=400, width=750, what=['Cestujúci', 'Jazdy', 'Platby'], 
                  monthly=False, day=True):
     if not monthly:
@@ -50,7 +50,7 @@ def make_graphs(df, create=True):
             dfdays[day] = {}
             dfdays[day]['pick_graph'] = total_graphs(pick_df) 
             dfdays[day]['drop_graph'] = total_graphs(drop_df, pick=False)
-            pickle.dump(dfdays, open(plotfile,'wb'))
+        pickle.dump(dfdays, open(plotfile,'wb'))
     else:
         dfdays = pickle.load(open(plotfile,'rb'))
     return dfdays
