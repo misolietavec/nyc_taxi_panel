@@ -5,7 +5,7 @@ import panel.widgets as pnw
 import plotly.express as px
 import ipywidgets as ipw
 from bokeh.io import curdoc as document # len kvoli nazvu v prehliadaci
-from data_functions_sk import make_graphs, static_graphs
+from data_functions_sk import make_graphs, static_graphs, weekday_plot
 from ipyleaflet import Map, MarkerCluster, CircleMarker
 from PIL import Image
 pn.config.throttled = True
@@ -17,7 +17,7 @@ meanloc = [df['pick_lat'].mean(), df['pick_lon'].mean()]
 pick_days, drop_days, pick_hours, drop_hours = static_graphs(df)
 static_days = pn.Column(pick_days, drop_days)
 static_hours = pn.Column(pick_hours, drop_hours)
-
+static_weekdays = pn.Row(weekday_plot(df), width=800)
 dfdays = make_graphs(df, create=False)  # grafy predrobene uz pre tento vyber
 
 day_choose = pnw.IntSlider(start=1, end=31, value=14, width=250, name='Deň')
@@ -25,7 +25,7 @@ hour_choose = pnw.IntSlider(start=0, end=23, value=11, width=300, name='Hodina')
 day_player = pnw.DiscretePlayer(options=list(range(1, 32)), interval=300, value=1, show_loop_controls=False)
 smer = pnw.RadioBoxGroup(options=['Nástup','Výstup'], inline=True)
 # pre celkove grafy
-day_or_hour = pnw.RadioBoxGroup(options=['Podľa dní','Podľa hodín'], inline=True)
+day_or_hour = pnw.RadioBoxGroup(options=['Podľa dní','Podľa hodín', 'Dni v týždni (nástupy)'], inline=True)
 # pre histogram vzdialenosti
 nbins = pnw.IntSlider(start=10, end=120, value=20, width=250, name='Počet tried');
 
@@ -36,7 +36,6 @@ def play_hourly(value, dnuvon):
     graf.update_yaxes(range=[0, 750])  # odhad z grafov
     return graf
     
-
 bind_hourly = pn.bind(play_hourly, value=day_player, dnuvon=smer)
 play_col = pn.Column(day_player, smer, bind_hourly)
 
@@ -50,7 +49,8 @@ def view_hourly(day_choose, smer):
 
 @pn.depends(day_or_hour)
 def view_totals(day_or_hour):
-    return static_days if day_or_hour == 'Podľa dní' else static_hours
+    return (static_days if day_or_hour == 'Podľa dní' else 
+           (static_hours if day_or_hour == 'Podľa hodín' else static_weekdays))
 
 
 mapa =  Map(center=meanloc, layout=ipw.Layout(width='750px', height='450px'))
@@ -104,8 +104,8 @@ def view_rtimes(nbins):
     return px.bar(data_frame=df_hist, x='x', y='y', 
                   barmode='group', labels={'x': 'Čas jazdy (min.)', 'y': 'početnosť',
                                            'variable': 'hodnota'}, width=900, height=350)
-dist_and_times = pn.Column(pn.Spacer(height=20), nbins, view_distances, view_rtimes)
 
+dist_and_times = pn.Column(pn.Spacer(height=20), nbins, view_distances, view_rtimes)
 
 pick_images, drop_images = {}, {}
 for hour in range(24):
@@ -117,9 +117,9 @@ for hour in range(24):
 def view_shaded(hour_choose, smer):
     images = pick_images if (smer == 'Nástup') else drop_images
     return images[hour_choose]
+
 shaded_md = pn.pane.Markdown("### Všetkých 11 mil. zápisov, spracované cez datashader")
 shaded = pn.Column(pn.Spacer(height=20), shaded_md, pn.Row(smer, hour_choose), view_shaded)
-
 
 nadpis = pn.pane.Markdown(
     f"""
@@ -130,7 +130,6 @@ document().title = "NYC Taxi" # Nazov v prehliadaci
 hourly = pn.Column(pn.Spacer(height=20), pn.Row(smer, day_choose), view_hourly)
 maps = pn.Column( pn.Spacer(height=20), pn.Row(smer, day_choose, hour_choose), rides, view_map)
 totals = pn.Column(pn.Spacer(height=20), day_or_hour, view_totals)
-
 tabs = pn.Tabs(('Grafy podľa dní', hourly), ('Grafy celkové', totals),
                ('Miesta na mape', maps), ('Histogramy', dist_and_times),
                ('Prehrávač', play_col), ('Datashader', shaded), dynamic=True)

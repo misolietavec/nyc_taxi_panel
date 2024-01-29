@@ -63,6 +63,15 @@ def monthly_frame(frm, pick=True, day=True):
                                          pl.col('fare').count().alias('Jazdy')]).sort(by=column)
     return df_month
 
+def weekday_plot(frm):
+    df_wd = frm.with_columns(pl.date(2015, 1, pl.col('pick_day')).dt.weekday().alias('wday'))\
+                           .select(['pick_day', 'wday'])
+    wstat = df_wd.group_by(pl.col('wday')).agg(pl.col('wday').count().alias('counts')).sort(by='wday')
+    graf = px.bar(wstat, x='wday', y='counts', barmode='group', orientation='v', width=750, height=400)
+    xtext = ['Pondelok', 'Utorok', 'Streda', 'Štvrtok', 'Piatok', 'Sobota', 'Nedeľa']
+    graf.update_layout(xaxis=dict(tickmode='array', tickvals=list(range(1, 8)), title='Deň v týždni',
+                       ticktext=xtext, tickangle=0), yaxis=dict(title="Počet jázd"))
+    return graf
 
 # Plots - pickups and dropoffs by hour (rides, passenger count, fare), total
 def static_graphs(frm):
