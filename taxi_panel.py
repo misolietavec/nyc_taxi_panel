@@ -104,8 +104,8 @@ def view_rtimes(nbins):
     return px.bar(data_frame=df_hist, x='x', y='y', 
                   barmode='group', labels={'x': 'Čas jazdy (min.)', 'y': 'početnosť',
                                            'variable': 'hodnota'}, width=900, height=350)
-
 dist_and_times = pn.Column(pn.Spacer(height=20), nbins, view_distances, view_rtimes)
+
 
 pick_images, drop_images = {}, {}
 for hour in range(24):
@@ -130,7 +130,11 @@ document().title = "NYC Taxi" # Nazov v prehliadaci
 hourly = pn.Column(pn.Spacer(height=20), pn.Row(smer, day_choose), view_hourly)
 maps = pn.Column( pn.Spacer(height=20), pn.Row(smer, day_choose, hour_choose), rides, view_map)
 totals = pn.Column(pn.Spacer(height=20), day_or_hour, view_totals)
-tabs = pn.Tabs(('Grafy podľa dní', hourly), ('Grafy celkové', totals),
+
+tabs = pn.Tabs(('Grafy podľa dní', hourly), ('Grafy celkové', totals), ('Po dňoch v týždni', static_weekdays),
                ('Miesta na mape', maps), ('Histogramy', dist_and_times),
                ('Prehrávač', play_col), ('Datashader', shaded), dynamic=True)
 pn.Column(nadpis, pn.Spacer(height=25), tabs).servable()
+
+
+
