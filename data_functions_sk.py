@@ -3,6 +3,9 @@ import plotly.express as px
 import os, pickle
 import numpy as np
 
+dfdays = pickle.load(open('data/dfdays.pic','rb'))
+df = pl.read_parquet('data/nyc_taxi155k.parq')
+
 
 def get_totals(frm, pick=True):
     columns = [pl.col('pick_day'), pl.col('pick_hour')] if pick else [pl.col('drop_day'), pl.col('drop_hour')]
@@ -85,5 +88,9 @@ def static_graphs(frm):
     drop_hours = total_graphs(monthly_frame(frm, pick=False, day=False), height=350, width=900, 
                               monthly=True, pick=False, day=False) 
     return pick_days, drop_days, pick_hours, drop_hours
+
+
+pick_days, drop_days, pick_hours, drop_hours = static_graphs(df)
+weekdays = weekday_plot(df)
 
 
