@@ -9,7 +9,7 @@ shortened, instead of `datetime` column we use separate `hour` and `day` columns
 available at https://feelmath.eu/Download/nyc_taxi.parq.
 
 For running the notebook `taxi_panel.ipynb` the modules `panel, ipyleaflet,
-fastparquet, plotly` need to be installed. 
+polars, pandas, pyarrow, fastparquet, plotly` need to be installed. 
 
 File `datashader_images.py` is here only to show, how the images in `images/` folder
 were generated.
