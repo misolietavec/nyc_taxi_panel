@@ -3,15 +3,10 @@ import polars as pl
 import plotly.express as px
 import numpy as np
 import ipywidgets as ipw
-from ipyleaflet import Map, MarkerCluster, CircleMarker
 from PIL import Image
 from data_functions_sk import df, dfdays
 
 meanloc = [df['pick_lat'].mean(), df['pick_lon'].mean()]
-mapa =  Map(center=meanloc, layout=ipw.Layout(width='750px', height='450px'))
-bod =  CircleMarker(location=meanloc, radius=6, visible=False)
-body = MarkerCluster(markers=[bod] * 10, visible=False)
-mapa.add(body)
 
 
 pick_images, drop_images = {}, {}
@@ -61,17 +56,6 @@ def view_rtimes(nb):
     return px.bar(data_frame=df_hist, x='x', y='y', 
                   barmode='group', labels={'x': 'Čas jazdy (min.)', 'y': 'početnosť',
                                          'variable': 'hodnota'}, width=900, height=350)
-
-
-def view_map(day, hour, direct):
-    data, what = df_for_map(day, hour, direct)
-    col_lat, col_lon = f'{what}_lat', f'{what}_lon'
-    lat, lon = data[col_lat], data[col_lon]
-    newcent = [lat.mean(), lon.mean()] if len(lat) else meanloc
-    mapa.center = newcent
-    marks = [CircleMarker(location=[lata, lona], radius=2) for lata, lona in zip(lat, lon)]
-    body.markers = marks
-    return mapa
 
 
 def rides(day, hour, direct):

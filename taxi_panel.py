@@ -1,10 +1,12 @@
 import polars as pl
 import panel as pn
 import panel.widgets as pnw
+import ipywidgets as ipw
 from bokeh.io import curdoc as document # len kvoli nazvu v prehliadaci
+from ipyleaflet import Map, MarkerCluster, CircleMarker
 from data_functions_sk import dfdays, weekdays, pick_days, drop_days, pick_hours, drop_hours
 from view_panel import play_hourly, df_for_map, view_distances, view_rtimes,\
-                       mapa, body, meanloc, view_map, rides, view_shaded, view_hourly
+                       meanloc, rides, view_shaded, view_hourly
 
 pn.config.throttled = True
 pn.extension('plotly','ipywidgets')
@@ -12,6 +14,11 @@ pn.extension('plotly','ipywidgets')
 static_days = pn.Column(pick_days, drop_days)
 static_hours = pn.Column(pick_hours, drop_hours)
 static_weekdays = pn.Row(weekdays, width=800)
+
+mapa =  Map(center=meanloc, layout=ipw.Layout(width='750px', height='450px'))
+bod =  CircleMarker(location=meanloc, radius=6, visible=False)
+body = MarkerCluster(markers=[bod] * 10, visible=False)
+mapa.add(body)
 
 day_choose = pnw.IntSlider(start=1, end=31, value=14, width=250, name='Deň')
 hour_choose = pnw.IntSlider(start=0, end=23, value=11, width=300, name='Hodina')
@@ -31,8 +38,19 @@ def view_totals(doh):
     return (static_days if doh == 'Podľa dní' else 
            (static_hours if doh == 'Podľa hodín' else static_weekdays))
 
-
 bind_totals = pn.bind(view_totals, doh=day_or_hour)
+
+
+def view_map(day, hour, direct):
+    data, what = df_for_map(day, hour, direct)
+    col_lat, col_lon = f'{what}_lat', f'{what}_lon'
+    lat, lon = data[col_lat], data[col_lon]
+    newcent = [lat.mean(), lon.mean()] if len(lat) else meanloc
+    mapa.center = newcent
+    marks = [CircleMarker(location=[lata, lona], radius=2) for lata, lona in zip(lat, lon)]
+    body.markers = marks
+    return mapa
+
 bind_map = pn.bind(view_map, day=day_choose, hour=hour_choose, direct=smer)
 bind_rides = pn.bind(rides, day=day_choose, hour=hour_choose, direct=smer)
 
